@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Web App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.0.0/dist/markdown-it.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #e2e8f0;
+            color: #1a202c;
+            text-align: right;
+        }
+        .bot-message {
+            background-color: #f0f4c3;
+            color: #1a202c;
+            text-align: left;
+        }
+        .input-container {
+            display: flex;
+            margin-top: 20px;
+        }
+        .input-box {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 5px 0 0 5px;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+        }
+        .send-button {
+            padding: 10px 20px;
+            background-color: #4a5568;
+            color: white;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        .send-button:hover {
+            background-color: #2d3748;
+        }
+        .chat-history {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 5px;
+            background-color: #f7fafc;
+        }
+        .settings-container {
+            margin-top: 20px;
+            padding: 15px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .setting-item {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .setting-label {
+            margin-right: 10px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .styled-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding: 8px;
+            border: 1px solid #cbd5e0;
+            border-radius: 5px;
+            width: 150px;
+            font-size: 14px;
+            background-color: white;
+            color: #1a202c;
+            font-family: 'Inter', sans-serif;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23cbd5e0' stroke-width='2' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 16px;
+        }
+        .styled-select:focus {
+            outline: none;
+            border-color: #4a5568;
+            box-shadow: 0 0 0 2px rgba(74, 85, 104, 0.2);
+        }
+        .apply-button {
+            padding: 8px 16px;
+            background-color: #4a5568;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+        .apply-button:hover {
+            background-color: #2d3748;
+        }
+        .status-label {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #4a5568;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+        .toast-hide {
+            opacity: 0;
+            transform: translateX(-50%) translateY(20px);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen">
+    <div class="bg-white shadow-md rounded-lg p-6 w-full max-w-5xl">
+        <h1 class="text-3xl font-semibold mb-4 text-gray-800 text-center">SOCIAL ROBOT CHAT</h1>
+        <h3 class="text-1xl font-semibold mb-4 text-gray-800 text-center">Team members: Pelumi Abimbola and Aditi Virupakshaiah </h3>
+        <div id="chat-history" class="chat-history">
+        </div>
+        <div class="input-container">
+            <input type="text" id="message-input" class="input-box" placeholder="Type your message...">
+            <button id="send-button" class="send-button">Send</button>
+        </div>
+        <div class="settings-container">
+            <h2 class="text-lg font-semibold mb-4 text-gray-700">Settings</h2>
+            <div class="setting-item">
+                <label for="humor-style-select" class="setting-label">Humor Style:</label>
+                <select id="humor-style-select" class="styled-select">
+                    <option value="no humor">No Humor</option>
+                    <option value="jokes">Jokes</option>
+                    <option value="sarcasm">Sarcasm</option>
+                    <option value="wordplay">Wordplay</option>
+                    <option value="adaptive">Adaptive</option>
+                </select>
+            </div>
+            <button id="apply-settings-button" class="apply-button">Apply</button>
+        </div>
+        <div id="status-label" class="status-label">Ready</div>
+    </div>
+    <script>
+        
+        window.onload = function() {
+            applySettings();
+         };
+        const BASE_URL='https://chatbot-hri.onrender.com'
+        const chatHistory = document.getElementById('chat-history');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const humorStyleSelect = document.getElementById('humor-style-select');
+        const applySettingsButton = document.getElementById('apply-settings-button');
+        const statusLabel = document.getElementById('status-label');
+        const md = window.markdownit();
+        
+        let humorStyle = "no humor";
+        let chatHistoryContent = [];
+        function addMessage(sender, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+
+        
+            const msg = md.render(message);
+
+            messageDiv.innerHTML = msg;
+            chatHistory.appendChild(messageDiv);
+            chatHistoryContent.push({ sender: sender, message: message });
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (messageText === '') return;
+            addMessage('user', messageText);
+            messageInput.value = '';
+            statusLabel.textContent = "Processing...";
+            const data = {
+                message: messageText,
+                humor_style: humorStyle,
+                history: chatHistoryContent
+            };
+            fetch(`${BASE_URL}/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage('bot', data.response);
+                statusLabel.textContent = "Ready";
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addMessage('bot', 'Sorry, there was an error communicating with the server.');
+                statusLabel.textContent = "Error";
+            });
+        }
+        function applySettings() {
+            humorStyle = humorStyleSelect.value;
+            chatHistory.innerHTML = '';
+            const data = {
+                humor_style: humorStyle,
+                history: []
+            };
+            fetch(`${BASE_URL}/settings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage('bot', data.response);
+                showToast("Humor style selection successful!");
+                statusLabel.textContent = "Ready";
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addMessage('bot', 'Sorry, there was an error communicating with the server.');
+                statusLabel.textContent = "Error";
+            });
+            console.log('Humor style set to:', humorStyle);
+        }
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('toast-hide');
+                setTimeout(() => toast.remove(), 500);
+            }, 1500);
+        }
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        applySettingsButton.addEventListener('click', applySettings);
+    </script>
+</body>
+</html>
